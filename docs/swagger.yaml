@@ -1,0 +1,88 @@
+basePath: /
+definitions:
+  url.ShortenRequest:
+    properties:
+      url:
+        type: string
+    required:
+    - url
+    type: object
+  url.ShortenResponse:
+    properties:
+      short:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Сервис для сокращения и редиректа URL.
+  title: URL Shortener API
+  version: "1.0"
+paths:
+  /{code}:
+    get:
+      description: Находит оригинальный URL по короткому коду и делает 302 редирект
+      parameters:
+      - description: Short URL code
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "302":
+          description: Redirect to original URL
+          schema:
+            type: string
+        "404":
+          description: Short code not found
+          schema:
+            type: string
+      summary: Редирект по короткому коду
+      tags:
+      - urls
+  /healthz:
+    get:
+      description: Возвращает 200 OK, если сервис работает
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+      summary: Health используется для начального состояния проекта
+      tags:
+      - health
+  /shorten:
+    post:
+      consumes:
+      - application/json
+      description: 'Принимает JSON {"url": "..."} и возвращает короткий код'
+      parameters:
+      - description: Original URL
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/url.ShortenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/url.ShortenResponse'
+        "400":
+          description: invalid payload
+          schema:
+            type: string
+        "500":
+          description: failed to shorten url
+          schema:
+            type: string
+      summary: Сокращение URL
+      tags:
+      - urls
+swagger: "2.0"

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Neimess/shortener/internal/util/http"
 	model "github.com/Neimess/shortener/internal/model/url"
 	service "github.com/Neimess/shortener/internal/service/url"
 )
@@ -30,31 +31,28 @@ func NewURLHandler(s service.Service) URLHandler {
 // @Tags        urls
 // @Accept      json
 // @Produce     json
-// @Param       input body url.ShortenRequest true "Original URL"
-// @Success     200 {object} url.ShortenResponse
+// @Param       input body model.ShortenRequest true "Original URL"
+// @Success     200 {object} model.ShortenResponse
 // @Failure     400 {string} string "invalid payload"
 // @Failure     500 {string} string "failed to shorten url"
 // @Router      /shorten [post]
 func (h *urlHandler) Shorten(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		httputil.Error(w, http.StatusMethodNotAllowed, "method not allowed")
 		return
 	}
 	var req model.ShortenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid payload", http.StatusBadRequest)
+		httputil.Error(w, http.StatusBadRequest, "invalid payload")
 		return
 	}
 	code, err := h.svc.Shorten(req.URL)
 	if err != nil {
 		log.Printf("failed to shorten URL %s: %v", req.URL, err)
-		http.Error(w, "failed to shorten url", http.StatusInternalServerError)
+		httputil.Error(w, http.StatusInternalServerError, "failed to shorten url")
 		return
 	}
-	if err := json.NewEncoder(w).Encode(model.ShortenResponse{ShortCode: code}); err != nil {
-		http.Error(w, "failed to write response", http.StatusInternalServerError)
-		return
-	}
+	httputil.JSON(w, http.StatusCreated, model.ShortenResponse{ShortCode: code})
 
 }
 

@@ -1,10 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
-WORKDIR_APP="/app"
+WORKDIR="$WORKDIR"
 
-MIGRATIONS="$WORKDIR_APP/migrations"
+MIGRATIONS="$WORKDIR/migrations"
 
+source "$WORKDIR/.env.local"
 
 case "$DRIVER" in
   postgres)
@@ -22,5 +23,3 @@ esac
 echo "Running migrations for $DRIVER"
 migrate -path "$MIGRATIONS" -database "$DATABASE_URL" up
 
-echo "Миграции применены, запускаем сервис…"
-exec "$WORKDIR_APP/shortener"

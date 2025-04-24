@@ -1,13 +1,37 @@
 basePath: /
 definitions:
-  url.ShortenRequest:
+  github_com_Neimess_shortener_internal_model_auth.RefreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  github_com_Neimess_shortener_internal_model_auth.RefreshResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  github_com_Neimess_shortener_internal_model_auth.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  github_com_Neimess_shortener_internal_model_auth.RegisterResponse:
+    properties:
+      user_id:
+        type: integer
+    type: object
+  github_com_Neimess_shortener_internal_model_url.ShortenRequest:
     properties:
       url:
         type: string
     required:
     - url
     type: object
-  url.ShortenResponse:
+  github_com_Neimess_shortener_internal_model_url.ShortenResponse:
     properties:
       short:
         type: string
@@ -55,6 +79,72 @@ paths:
       summary: Health используется для начального состояния проекта
       tags:
       - health
+  /refresh:
+    post:
+      consumes:
+      - application/json
+      description: Принимает JSON {"refresh_token":"..."} и возвращает новые access
+        и refresh токены
+      parameters:
+      - description: Refresh Token
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_Neimess_shortener_internal_model_auth.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_Neimess_shortener_internal_model_auth.RefreshResponse'
+        "400":
+          description: invalid payload
+          schema:
+            type: string
+        "401":
+          description: invalid refresh token
+          schema:
+            type: string
+        "500":
+          description: refresh failed
+          schema:
+            type: string
+      summary: Обновление access token
+      tags:
+      - auth
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Принимает JSON {"email":"...","password":"..."} и создаёт нового
+        пользователя
+      parameters:
+      - description: Credentials
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_Neimess_shortener_internal_model_auth.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_Neimess_shortener_internal_model_auth.RegisterResponse'
+        "400":
+          description: invalid payload
+          schema:
+            type: string
+        "500":
+          description: failed to shorten url
+          schema:
+            type: string
+      summary: Регистрация пользователя
+      tags:
+      - auth
   /shorten:
     post:
       consumes:
@@ -66,14 +156,14 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/url.ShortenRequest'
+          $ref: '#/definitions/github_com_Neimess_shortener_internal_model_url.ShortenRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/url.ShortenResponse'
+            $ref: '#/definitions/github_com_Neimess_shortener_internal_model_url.ShortenResponse'
         "400":
           description: invalid payload
           schema:

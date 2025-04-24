@@ -29,6 +29,104 @@
                 }
             }
         },
+        "/refresh": {
+            "post": {
+                "description": "Принимает JSON {\"refresh_token\":\"...\"} и возвращает новые access и refresh токены",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Обновление access token",
+                "parameters": [
+                    {
+                        "description": "Refresh Token",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Neimess_shortener_internal_model_auth.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Neimess_shortener_internal_model_auth.RefreshResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid payload",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "invalid refresh token",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "refresh failed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/register": {
+            "post": {
+                "description": "Принимает JSON {\"email\":\"...\",\"password\":\"...\"} и создаёт нового пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Регистрация пользователя",
+                "parameters": [
+                    {
+                        "description": "Credentials",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Neimess_shortener_internal_model_auth.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Neimess_shortener_internal_model_auth.RegisterResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid payload",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "failed to shorten url",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/shorten": {
             "post": {
                 "description": "Принимает JSON {\"url\": \"...\"} и возвращает короткий код",
@@ -49,7 +147,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/url.ShortenRequest"
+                            "$ref": "#/definitions/github_com_Neimess_shortener_internal_model_url.ShortenRequest"
                         }
                     }
                 ],
@@ -57,7 +155,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/url.ShortenResponse"
+                            "$ref": "#/definitions/github_com_Neimess_shortener_internal_model_url.ShortenResponse"
                         }
                     },
                     "400": {
@@ -112,7 +210,45 @@
         }
     },
     "definitions": {
-        "url.ShortenRequest": {
+        "github_com_Neimess_shortener_internal_model_auth.RefreshRequest": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_Neimess_shortener_internal_model_auth.RefreshResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_Neimess_shortener_internal_model_auth.RegisterRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_Neimess_shortener_internal_model_auth.RegisterResponse": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_Neimess_shortener_internal_model_url.ShortenRequest": {
             "type": "object",
             "required": [
                 "url"
@@ -123,7 +259,7 @@
                 }
             }
         },
-        "url.ShortenResponse": {
+        "github_com_Neimess_shortener_internal_model_url.ShortenResponse": {
             "type": "object",
             "properties": {
                 "short": {

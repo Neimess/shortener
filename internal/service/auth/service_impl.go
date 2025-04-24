@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"time"
 
 	cachepkg "github.com/Neimess/shortener/internal/infrastructure/cache"
 	"github.com/Neimess/shortener/internal/infrastructure/db"
@@ -17,24 +16,19 @@ import (
 type serviceImpl struct {
 	repos      db.RepositorySet
 	cache      cachepkg.ExpirableCache
-	jwtManager *jwtutil.JWTManager
+	jwtManager jwtutil.JWTManager
 }
 
 func NewService(
 	repos db.RepositorySet,
 	cache cachepkg.ExpirableCache,
-	jwtSecret []byte,
-	jwtExpiry time.Duration,
-	refreshExpiry time.Duration,
+	jwtManager jwtutil.JWTManager,
 
 ) Service {
 	return &serviceImpl{
-		repos: repos,
-		cache: cache,
-		jwtManager: jwtutil.New(
-			jwtSecret,
-			jwtExpiry,
-			refreshExpiry),
+		repos:      repos,
+		cache:      cache,
+		jwtManager: jwtManager,
 	}
 }
 
@@ -88,16 +82,16 @@ func (s *serviceImpl) Login(ctx context.Context, email, password string) (string
 	return accessToken, refreshToken, nil
 }
 
-func (s *serviceImpl) Refresh(ctx context.Context, refreshToken string) (string, string, error) {
+func (s *serviceImpl) Refresh(ctx context.Context, refreshToken string) (string, error) {
 	claims, err := s.jwtManager.Decode(refreshToken)
 	if err != nil {
-		return "", "", fmt.Errorf("invalid refresh token: %w", err)
+		return "", fmt.Errorf("invalid refresh token: %w", err)
 	}
 
 	keyOld := "refresh:" + refreshToken
 	storedUserID, err := s.cache.Get(ctx, keyOld)
 	if err != nil || storedUserID == "" {
-		return "", "", errors.New("refresh token revoked or expired")
+		return "", errors.New("refresh token revoked or expired")
 	}
 	_ = s.cache.Del(ctx, keyOld)
 
@@ -106,17 +100,8 @@ func (s *serviceImpl) Refresh(ctx context.Context, refreshToken string) (string,
 
 	newAt, err := s.jwtManager.GenerateAccessToken(userID, email)
 	if err != nil {
-		return "", "", fmt.Errorf("cannot generate new access token: %w", err)
-	}
-	newRt, err := s.jwtManager.GenerateRefreshToken(userID, email)
-	if err != nil {
-		return "", "", fmt.Errorf("cannot generate new refresh token: %w", err)
+		return "", fmt.Errorf("cannot generate new access token: %w", err)
 	}
 
-	keyNew := "refresh:" + newRt
-	if err := s.cache.SetWithTTL(ctx, keyNew, userID, s.jwtManager.RefreshTTL()); err != nil {
-		return "", "", fmt.Errorf("cannot persist new refresh token: %w", err)
-	}
-
-	return newAt, newRt, nil
+	return newAt, nil
 }

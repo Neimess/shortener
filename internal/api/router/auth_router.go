@@ -2,26 +2,14 @@ package router
 
 import (
 	"net/http"
-	"time"
 
-	handler "github.com/Neimess/shortener/internal/api/handler/auth"
-	"github.com/Neimess/shortener/internal/infrastructure/cache"
+	authH "github.com/Neimess/shortener/internal/api/handler/auth"
 )
 
-func RegisterAuthRoutes(
-	mux *http.ServeMux,
-	h handler.AuthHandler,
-	cacheClient cache.FullCache,
-	spamLimit int,
-	spamWindow time.Duration,
-) {
+func (r *Router) AuthRoutes(h authH.AuthHandler) {
+	chain := NewChain(ChainOptions{Cache: r.Cache, SpamLimit: r.SpamLimit, SpamWindow: r.SpamWindow})
 
-	chain := NewChain(ChainOptions{
-		Cache:      cacheClient,
-		SpamLimit:  spamLimit,
-		SpamWindow: spamWindow,
-	})
-	mux.Handle("/auth/register", chain(http.HandlerFunc(h.Register)))
-	mux.Handle("/auth/login", chain(http.HandlerFunc(h.Login)))
-	mux.Handle("/auth/refresh", chain(http.HandlerFunc(h.Refresh)))
+	r.Mux.Handle("/auth/register", chain(http.HandlerFunc(h.Register)))
+	r.Mux.Handle("/auth/login", chain(http.HandlerFunc(h.Login)))
+	r.Mux.Handle("/auth/token/refresh", chain(http.HandlerFunc(h.Refresh)))
 }

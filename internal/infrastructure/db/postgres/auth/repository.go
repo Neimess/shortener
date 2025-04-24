@@ -21,11 +21,11 @@ func (r *Repository) Create(ctx context.Context, email, passwordHash string) (in
 	INSERT INTO users (email, password_hash)
 	VALUES ($1 $2)
 	`
-    var userID int
+	var userID int
 	if err := r.db.QueryRowContext(ctx, query, email, passwordHash).Scan(&userID); err != nil {
-        return 0, nil
-    }
-    return userID, nil
+		return 0, nil
+	}
+	return userID, nil
 }
 
 func (r *Repository) GetByEmail(ctx context.Context, email string) (*user.User, error) {
@@ -35,18 +35,18 @@ func (r *Repository) GetByEmail(ctx context.Context, email string) (*user.User, 
         WHERE email = $1
     `
 	u := &user.User{}
-    err := r.db.QueryRowContext(ctx, query, email).Scan(
-        &u.ID,
-        &u.Email,
-        &u.PasswordHash,
-        &u.CreatedAt,
-        &u.UpdatedAt,
-    )
+	err := r.db.QueryRowContext(ctx, query, email).Scan(
+		&u.ID,
+		&u.Email,
+		&u.PasswordHash,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+	)
 	if err == sql.ErrNoRows {
-        return nil, nil
-    }
+		return nil, nil
+	}
 	if err != nil {
-        return nil, err
-    }
-    return u, nil
+		return nil, err
+	}
+	return u, nil
 }

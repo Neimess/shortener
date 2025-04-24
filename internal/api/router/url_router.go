@@ -1,28 +1,13 @@
 package router
 
 import (
+	urlH "github.com/Neimess/shortener/internal/api/handler/url"
 	"net/http"
-	"time"
-
-	handler "github.com/Neimess/shortener/internal/api/handler/url"
-	"github.com/Neimess/shortener/internal/infrastructure/cache"
 )
 
-func RegisterURLRoutes(
-	mux *http.ServeMux,
-	h handler.URLHandler,
-	cacheClient cache.FullCache,
-	spamLimit int,
-	spamWindow time.Duration,
-) {
-	chain := NewChain(ChainOptions{
-		Cache:      cacheClient,
-		SpamLimit:  spamLimit,
-		SpamWindow: spamWindow,
-	})
-
-	mux.Handle("/shorten", chain(http.HandlerFunc(h.Shorten)))
-	mux.Handle("/healthz", chain(http.HandlerFunc(h.Health)))
-	mux.Handle("/", chain(http.HandlerFunc(h.Redirect)))
-
+func (r *Router) URLRoutes(h urlH.URLHandler) {
+	chain := NewChain(ChainOptions{Cache: r.Cache, SpamLimit: r.SpamLimit, SpamWindow: r.SpamWindow})
+	r.Mux.Handle("/shorten", chain(http.HandlerFunc(h.Shorten)))
+	r.Mux.Handle("/healthz", chain(http.HandlerFunc(h.Health)))
+	r.Mux.Handle("/", chain(http.HandlerFunc(h.Redirect)))
 }

@@ -14,26 +14,28 @@ import (
 	"github.com/Neimess/shortener/internal/infrastructure/cache"
 	"github.com/Neimess/shortener/internal/infrastructure/db"
 	"github.com/Neimess/shortener/internal/infrastructure/generator"
-	urlUsecase "github.com/Neimess/shortener/internal/service/url"
+	authService "github.com/Neimess/shortener/internal/service/auth"
+	urlService "github.com/Neimess/shortener/internal/service/url"
+	jwtutil "github.com/Neimess/shortener/internal/util/jwt"
 
-	// authUsecase "github.com/Neimess/shortener/internal/service/auth"
+	authHandler "github.com/Neimess/shortener/internal/api/handler/auth"
 	urlHandler "github.com/Neimess/shortener/internal/api/handler/url"
 	"github.com/Neimess/shortener/internal/api/middleware"
 	"github.com/Neimess/shortener/internal/api/router"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/Neimess/shortener/internal/maintenance/metric"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type App struct {
-	Config  *config.Config
-	Handler http.Handler
+	Config   config.Config
+	ServeMux *http.ServeMux
 }
 
-func Initialize() *App {
-	cfg := config.Load()
+func New() *App {
+	cfg := config.New()
 	metrics.Init()
-	
-	dbConn, err := sql.Open(cfg.Driver, cfg.DSN)
+
+	dbConn, err := sql.Open(cfg.Driver(), cfg.DSN())
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
 	}
@@ -44,7 +46,8 @@ func Initialize() *App {
 	repos := db.NewRepositories(dbConn, cfg)
 
 	var cacheClient cache.FullCache
-	cacheClient, err = cache.NewRedisAdapter(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
+
+	cacheClient, err = cache.NewRedisAdapter(cfg.RedisAddr())
 	if err != nil {
 		log.Printf("redis init failed: %v — using NullCache", err)
 		cacheClient = cache.NewNullAdapter()
@@ -52,26 +55,33 @@ func Initialize() *App {
 
 	// Вспомогательные функции
 	codeGen := generator.NewCharsetGenerator()
-
+	jwtManager := jwtutil.New(
+		cfg.JWTSecret(),
+		cfg.AccessTTL(),
+		cfg.RefreshTTL(),
+	)
 	// Services
-	urlSvc := urlUsecase.NewService(repos, cacheClient, codeGen)
-	// authSvc := authUsecase.NewService(repos)
+	urlSvc := urlService.NewService(repos, cacheClient, codeGen)
+	authSvc := authService.NewService(repos, cacheClient, jwtManager)
 
 	// Handlers
 	urlH := urlHandler.NewURLHandler(urlSvc)
-	// authH := handler.NewAuthHandler(authSvc)
+	authH := authHandler.NewAuthHandler(authSvc, jwtManager)
 
 	// Routers
 	mux := http.NewServeMux()
-	router.RegisterURLRoutes(mux, urlH, cacheClient, 100, time.Minute)
-	// router.RegisterAuthRoutes(mux, authH, cacheClient, 10, time.Minute)
 	mux.Handle("/metrics", middleware.LoggerMiddleware(middleware.PrometheusMiddleware(promhttp.Handler())))
 	mux.Handle("/docs/", httpSwagger.Handler(
 		httpSwagger.URL("/docs/doc.json"),
 	))
 
+	router := router.New(mux, cacheClient, jwtManager, 100, time.Minute)
+	router.URLRoutes(urlH)
+	router.AuthRoutes(authH)
+	// router.UserRoutes(urlHandler)
+
 	return &App{
-		Config:  cfg,
-		Handler: mux,
+		Config:   cfg,
+		ServeMux: mux,
 	}
 }

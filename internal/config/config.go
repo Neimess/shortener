@@ -5,20 +5,36 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 )
 
-type Config struct {
-	Driver        string
-	DSN           string
-	RedisAddr     string
-	RedisPassword string
-	RedisDB       int
-	Port          string
+type Config interface {
+	ServerPort() string
+	Driver() string
+	DSN() string
+	RedisAddr() string
+	RedisPassword() string
+	RedisDB() int
+	JWTSecret() []byte
+	AccessTTL() time.Duration
+	RefreshTTL() time.Duration
+}
+
+type configImpl struct {
+	port       string
+	driver     string
+	dsn        string
+	redisAddr  string
+	redisPass  string
+	redisDB    int
+	jwtSecret  []byte
+	accessTTL  time.Duration
+	refreshTTL time.Duration
 }
 
 var (
-	cfg  *Config
-	once sync.Once
+	instance Config
+	once     sync.Once
 )
 
 // Load загружает конфигурацию приложения один раз.
@@ -32,25 +48,49 @@ var (
 //
 //	DRIVER=postgres
 //	REDIS_ADDR=localhost:6379
-//	internal_PORT=8080
-//
-// Возвращает указатель на структуру конфигурации *Config.
-func Load() *Config {
+func New() Config {
 	once.Do(func() {
+		// Основные настройки
 		driver := getEnv("DRIVER", "postgres")
 		dsn := buildDSN(driver)
+		port := getEnv("PORT", "8080")
 
-		cfg = &Config{
-			Driver:        driver,
-			DSN:           dsn,
-			RedisAddr:     getEnv("REDIS_ADDR", "localhost:6379"),
-			RedisPassword: getEnv("REDIS_PASSWORD", ""),
-			RedisDB:       getEnvInt("REDIS_DB", 0),
-			Port:          getEnv("internal_PORT", "8080"),
+		// Redis
+		redisAddr := getEnv("REDIS_ADDR", "localhost:6379")
+		redisPass := getEnv("REDIS_PASSWORD", "")
+		redisDB := getEnvInt("REDIS_DB", 0)
+
+		// JWT
+		secret := getEnv("JWT_SECRET", "secret")
+
+		// TTL
+		accessTTL := getEnvDuration("ACCESS_TTL", 15*time.Minute)
+		refreshTTL := getEnvDuration("REFRESH_TTL", 7*24*time.Hour)
+
+		instance = &configImpl{
+			port:       port,
+			driver:     driver,
+			dsn:        dsn,
+			redisAddr:  redisAddr,
+			redisPass:  redisPass,
+			redisDB:    redisDB,
+			jwtSecret:  []byte(secret),
+			accessTTL:  accessTTL,
+			refreshTTL: refreshTTL,
 		}
 	})
-	return cfg
+	return instance
 }
+
+func (c *configImpl) ServerPort() string        { return c.port }
+func (c *configImpl) Driver() string            { return c.driver }
+func (c *configImpl) DSN() string               { return c.dsn }
+func (c *configImpl) RedisAddr() string         { return c.redisAddr }
+func (c *configImpl) RedisPassword() string     { return c.redisPass }
+func (c *configImpl) RedisDB() int              { return c.redisDB }
+func (c *configImpl) JWTSecret() []byte         { return c.jwtSecret }
+func (c *configImpl) AccessTTL() time.Duration  { return c.accessTTL }
+func (c *configImpl) RefreshTTL() time.Duration { return c.refreshTTL }
 
 func buildDSN(driver string) string {
 	switch driver {
@@ -92,6 +132,15 @@ func getEnvInt(key string, fallback int) int {
 	if v := os.Getenv(key); v != "" {
 		if i, err := strconv.Atoi(v); err == nil {
 			return i
+		}
+	}
+	return fallback
+}
+
+func getEnvDuration(key string, fallback time.Duration) time.Duration {
+	if v := os.Getenv(key); v != "" {
+		if d, err := time.ParseDuration(v); err == nil {
+			return d
 		}
 	}
 	return fallback

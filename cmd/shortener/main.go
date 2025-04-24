@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	app "github.com/Neimess/shortener/internal/bootstrap"
 	_ "github.com/Neimess/shortener/docs"
+	app "github.com/Neimess/shortener/internal/bootstrap"
 )
 
 // @title        URL Shortener API
@@ -15,11 +15,11 @@ import (
 // @host         localhost:8080
 // @BasePath     /
 func main() {
-	app := app.Initialize()
+	app := app.New()
 
 	srv := &http.Server{
-		Addr:         ":" + app.Config.Port,
-		Handler:      app.Handler,
+		Addr:         ":" + app.Config.ServerPort(),
+		Handler:      app.ServeMux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  60 * time.Second,

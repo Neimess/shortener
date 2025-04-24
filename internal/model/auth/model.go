@@ -2,15 +2,14 @@ package auth
 
 // swagger:model RefreshRequest
 type RefreshRequest struct {
-    RefreshToken string `json:"refresh_token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 // swagger:model RefreshResponse
 type RefreshResponse struct {
-    AccessToken  string `json:"access_token"`
-    RefreshToken string `json:"refresh_token,omitempty"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 }
-
 
 // swagger:model RegisterRequest
 type RegisterRequest struct {
@@ -25,12 +24,12 @@ type RegisterResponse struct {
 
 // swagger:model LoginRequest
 type LoginRequest struct {
-    Email    string `json:"email"`
-    Password string `json:"password"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 // swagger:model LoginResponse
 type LoginResponse struct {
-    AccessToken  string `json:"access_token"`
-    RefreshToken string `json:"refresh_token,omitempty"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 }

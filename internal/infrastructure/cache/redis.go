@@ -14,11 +14,9 @@ type RedisAdapter struct {
 	client *redis.Client
 }
 
-func NewRedisAdapter(addr, password string, db int) (*RedisAdapter, error) {
+func NewRedisAdapter(addr string) (*RedisAdapter, error) {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password,
-		DB:       db,
+		Addr: addr,
 	})
 	if err := rdb.Ping(ctx).Err(); err != nil {
 		log.Printf("Redis unavailable, disabling cache: %v\n", err)

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Neimess/shortener/internal/util/http"
 	model "github.com/Neimess/shortener/internal/model/url"
 	service "github.com/Neimess/shortener/internal/service/url"
+	"github.com/Neimess/shortener/internal/util/http"
 )
 
 type URLHandler interface {
@@ -24,7 +24,6 @@ type urlHandler struct {
 func NewURLHandler(s service.Service) URLHandler {
 	return &urlHandler{svc: s}
 }
-
 
 // @Summary     Сокращение URL
 // @Description Принимает JSON {"url": "..."} и возвращает короткий код

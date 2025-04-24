@@ -6,7 +6,6 @@ import (
 
 	handler "github.com/Neimess/shortener/internal/api/handler/url"
 	"github.com/Neimess/shortener/internal/infrastructure/cache"
-    httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func RegisterURLRoutes(
@@ -25,7 +24,5 @@ func RegisterURLRoutes(
 	mux.Handle("/shorten", chain(http.HandlerFunc(h.Shorten)))
 	mux.Handle("/healthz", chain(http.HandlerFunc(h.Health)))
 	mux.Handle("/", chain(http.HandlerFunc(h.Redirect)))
-    mux.Handle("/docs/", httpSwagger.Handler(
-		httpSwagger.URL("/docs/doc.json"),
-	))
+
 }

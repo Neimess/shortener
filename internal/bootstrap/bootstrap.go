@@ -8,6 +8,7 @@ import (
 
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/Neimess/shortener/internal/config"
 	"github.com/Neimess/shortener/internal/infrastructure/cache"
@@ -20,7 +21,7 @@ import (
 	"github.com/Neimess/shortener/internal/api/middleware"
 	"github.com/Neimess/shortener/internal/api/router"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-
+	"github.com/Neimess/shortener/internal/maintenance/metric"
 )
 
 type App struct {
@@ -28,9 +29,10 @@ type App struct {
 	Handler http.Handler
 }
 
-
 func Initialize() *App {
 	cfg := config.Load()
+	metrics.Init()
+	
 	dbConn, err := sql.Open(cfg.Driver, cfg.DSN)
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
@@ -61,10 +63,12 @@ func Initialize() *App {
 
 	// Routers
 	mux := http.NewServeMux()
-	router.RegisterURLRoutes(mux, urlH, cacheClient, 10, time.Minute)
+	router.RegisterURLRoutes(mux, urlH, cacheClient, 100, time.Minute)
 	// router.RegisterAuthRoutes(mux, authH, cacheClient, 10, time.Minute)
 	mux.Handle("/metrics", middleware.LoggerMiddleware(middleware.PrometheusMiddleware(promhttp.Handler())))
-	
+	mux.Handle("/docs/", httpSwagger.Handler(
+		httpSwagger.URL("/docs/doc.json"),
+	))
 
 	return &App{
 		Config:  cfg,
